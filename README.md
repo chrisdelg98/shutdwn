@@ -65,6 +65,15 @@ npm run tauri dev      # development with hot reload
 npm run tauri build    # production installer
 ```
 
+### Publish a release
+
+Tag a version and the GitHub Actions workflow builds installers for all 4 platforms and creates a draft release:
+
+```bash
+git tag v0.1.0
+git push --tags
+```
+
 ### License
 
 MIT — do whatever you like with it. Improvements welcome.
@@ -115,6 +124,15 @@ cd shutdwn
 npm install
 npm run tauri dev      # desarrollo con hot reload
 npm run tauri build    # instalador de producción
+```
+
+### Publicar una release
+
+Etiqueta una versión y el workflow de GitHub Actions compila los instaladores de las 4 plataformas y crea un draft release:
+
+```bash
+git tag v0.1.0
+git push --tags
 ```
 
 ### Licencia
