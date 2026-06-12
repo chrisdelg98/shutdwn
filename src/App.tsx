@@ -3,6 +3,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { IdleView } from "@/components/idle-view";
 import { ActiveView } from "@/components/active-view";
+import { BackgroundFx } from "@/components/background-fx";
 import { useTimer } from "@/hooks/use-timer";
 
 function AppShell() {
@@ -31,15 +32,18 @@ function AppShell() {
 
   return (
     <main className="relative flex h-screen w-screen flex-col items-center justify-center bg-background text-foreground">
-      <div className="absolute right-3 top-3 z-10">
+      <BackgroundFx />
+
+      <div className="absolute right-3 top-3 z-20">
         <ThemeToggle />
       </div>
 
-      <div className="absolute left-4 top-3 z-10">
-        <h1 className="text-base font-semibold tracking-tight">shutdwn</h1>
+      <div className="absolute left-4 top-3 z-20 flex items-center gap-2">
+        <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent-strong)] shadow-[0_0_8px_var(--accent-glow)]" />
+        <h1 className="text-base font-bold tracking-tight">shutdwn</h1>
       </div>
 
-      <div className="flex flex-col items-center">
+      <div className="relative z-10 flex flex-col items-center">
         {status.active && status.targetUnixMs != null ? (
           <ActiveView
             targetUnixMs={status.targetUnixMs}

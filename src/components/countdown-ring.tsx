@@ -11,7 +11,7 @@ export function CountdownRing({
   progress,
   size = 220,
 }: CountdownRingProps) {
-  const stroke = 10;
+  const stroke = 11;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - progress);
@@ -42,7 +42,10 @@ export function CountdownRing({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 0.6s ease" }}
+          style={{
+            transition: "stroke-dashoffset 0.6s ease",
+            filter: "drop-shadow(0 0 3px var(--accent-glow))",
+          }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">

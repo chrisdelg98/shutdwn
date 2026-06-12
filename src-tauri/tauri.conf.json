@@ -13,10 +13,10 @@
     "windows": [
       {
         "title": "shutdwn",
-        "width": 420,
-        "height": 560,
-        "minWidth": 380,
-        "minHeight": 520,
+        "width": 440,
+        "height": 660,
+        "minWidth": 400,
+        "minHeight": 600,
         "resizable": true,
         "fullscreen": false,
         "center": true,

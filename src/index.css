@@ -3,59 +3,65 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.15 0 0);
+  --background: oklch(0.985 0.005 240);
+  --foreground: oklch(0.12 0 0);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0 0);
+  --card-foreground: oklch(0.12 0 0);
 
-  --primary: oklch(0.55 0.18 255);
+  --primary: oklch(0.55 0.22 255);
   --primary-foreground: oklch(0.99 0 0);
 
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.2 0 0);
+  --secondary: oklch(0.94 0.02 240);
+  --secondary-foreground: oklch(0.15 0 0);
 
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.5 0 0);
+  --muted: oklch(0.93 0.02 240);
+  --muted-foreground: oklch(0.42 0.02 240);
 
-  --accent: oklch(0.96 0 0);
-  --accent-foreground: oklch(0.2 0 0);
+  --accent: oklch(0.92 0.05 250);
+  --accent-foreground: oklch(0.15 0 0);
 
   --destructive: oklch(0.58 0.22 27);
   --destructive-foreground: oklch(0.99 0 0);
 
-  --border: oklch(0.9 0 0);
-  --input: oklch(0.92 0 0);
-  --ring: oklch(0.55 0.18 255);
+  --border: oklch(0.82 0.06 250);
+  --input: oklch(0.85 0.04 250);
+  --ring: oklch(0.55 0.22 255);
+
+  --accent-strong: oklch(0.55 0.22 255);
+  --accent-glow: color-mix(in oklch, var(--accent-strong) 28%, transparent);
 
   --radius: 0.75rem;
 }
 
 .dark {
-  --background: oklch(0.13 0.01 260);
+  --background: oklch(0.13 0.02 260);
   --foreground: oklch(0.97 0 0);
 
-  --card: oklch(0.17 0.01 260);
+  --card: oklch(0.17 0.025 260);
   --card-foreground: oklch(0.97 0 0);
 
-  --primary: oklch(0.7 0.18 255);
-  --primary-foreground: oklch(0.13 0.01 260);
+  --primary: oklch(0.74 0.2 235);
+  --primary-foreground: oklch(0.1 0.015 260);
 
-  --secondary: oklch(0.22 0.01 260);
+  --secondary: oklch(0.2 0.025 260);
   --secondary-foreground: oklch(0.97 0 0);
 
-  --muted: oklch(0.22 0.01 260);
-  --muted-foreground: oklch(0.68 0 0);
+  --muted: oklch(0.2 0.025 260);
+  --muted-foreground: oklch(0.72 0.02 260);
 
-  --accent: oklch(0.25 0.01 260);
+  --accent: oklch(0.27 0.06 250);
   --accent-foreground: oklch(0.97 0 0);
 
   --destructive: oklch(0.62 0.22 27);
   --destructive-foreground: oklch(0.99 0 0);
 
-  --border: oklch(0.28 0.01 260);
-  --input: oklch(0.28 0.01 260);
-  --ring: oklch(0.7 0.18 255);
+  --border: oklch(0.36 0.07 250);
+  --input: oklch(0.32 0.06 250);
+  --ring: oklch(0.74 0.2 235);
+
+  --accent-strong: oklch(0.74 0.2 235);
+  --accent-glow: color-mix(in oklch, var(--accent-strong) 38%, transparent);
 }
 
 @theme inline {
@@ -113,5 +119,22 @@
     -moz-osx-font-smoothing: grayscale;
     user-select: none;
     overflow: hidden;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    appearance: none;
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--accent-strong) 35%, transparent);
+    color: var(--foreground);
   }
 }
