@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SettingsPopover } from "@/components/settings-popover";
 import { IdleView } from "@/components/idle-view";
 import { ActiveView } from "@/components/active-view";
 import { BackgroundFx } from "@/components/background-fx";
@@ -34,7 +35,8 @@ function AppShell() {
     <main className="relative flex h-screen w-screen flex-col items-center justify-center bg-background text-foreground">
       <BackgroundFx />
 
-      <div className="absolute right-3 top-3 z-20">
+      <div className="absolute right-3 top-3 z-20 flex items-center gap-1">
+        <SettingsPopover />
         <ThemeToggle />
       </div>
 

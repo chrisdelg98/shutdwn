@@ -152,7 +152,14 @@ pub fn start_timer(state: State<AppState>, app: AppHandle, minutes: u32) -> Time
             }
             if let Some(w) = warn_at {
                 if !warned && now >= w {
-                    send_warning(&app_thread);
+                    let notify = {
+                        let s = app_thread.state::<crate::settings::SettingsState>();
+                        let guard = s.0.lock().unwrap();
+                        guard.notify_one_minute
+                    };
+                    if notify {
+                        send_warning(&app_thread);
+                    }
                     warned = true;
                 }
             }
