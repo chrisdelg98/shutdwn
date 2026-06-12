@@ -1,13 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, Minimize2, Settings as SettingsIcon } from "lucide-react";
+import {
+  Bell,
+  Check,
+  Minimize2,
+  Settings as SettingsIcon,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useSettings } from "@/hooks/use-settings";
+import { useElevation } from "@/hooks/use-elevation";
 
 export function SettingsPopover() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { settings, update } = useSettings();
+  const { status: elevation, install, installing, error } = useElevation();
 
   useEffect(() => {
     if (!open) return;
@@ -62,6 +70,49 @@ export function SettingsPopover() {
             checked={settings.closeToTray}
             onChange={(v) => update({ closeToTray: v })}
           />
+
+          {elevation && elevation.needed && (
+            <div className="border-t border-border mt-1 pt-1">
+              <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                <div className="flex items-center gap-3">
+                  <span className="text-muted-foreground">
+                    <ShieldCheck className="h-4 w-4" />
+                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium leading-tight">
+                      Auto-shutdown setup
+                    </span>
+                    <span className="text-[11px] text-muted-foreground leading-tight">
+                      {elevation.configured
+                        ? "No password needed at shutdown"
+                        : "Install one-time admin rule"}
+                    </span>
+                  </div>
+                </div>
+                {elevation.configured ? (
+                  <span className="flex h-6 items-center gap-1 rounded-full bg-[color-mix(in_oklch,var(--accent-strong)_15%,transparent)] px-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-strong)]">
+                    <Check className="h-3 w-3" /> Ready
+                  </span>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      install().catch(() => {});
+                    }}
+                    disabled={installing}
+                  >
+                    {installing ? "Installing…" : "Set up"}
+                  </Button>
+                )}
+              </div>
+              {error && (
+                <p className="px-3 pb-2 text-[10px] text-destructive">
+                  {error}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

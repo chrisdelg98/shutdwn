@@ -225,9 +225,15 @@ fn execute_shutdown() -> std::io::Result<ExitStatus> {
     }
     #[cfg(target_os = "macos")]
     {
-        Command::new("osascript")
-            .args(["-e", r#"tell application "System Events" to shut down"#])
+        match Command::new("sudo")
+            .args(["-n", "/sbin/shutdown", "-h", "now"])
             .status()
+        {
+            Ok(s) if s.success() => Ok(s),
+            _ => Command::new("osascript")
+                .args(["-e", r#"tell application "System Events" to shut down"#])
+                .status(),
+        }
     }
     #[cfg(target_os = "linux")]
     {

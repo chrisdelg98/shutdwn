@@ -6,9 +6,29 @@ import { IdleView } from "@/components/idle-view";
 import { ActiveView } from "@/components/active-view";
 import { BackgroundFx } from "@/components/background-fx";
 import { useTimer } from "@/hooks/use-timer";
+import {
+  getElevationStatus,
+  installElevation,
+} from "@/lib/elevation-api";
+
+const ELEVATION_ASKED_KEY = "shutdwn-elevation-asked";
 
 function AppShell() {
   const { status, remainingMs, progress, start, cancel } = useTimer();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await getElevationStatus();
+        if (s.platform !== "macos" || !s.needed || s.configured) return;
+        if (localStorage.getItem(ELEVATION_ASKED_KEY) === "true") return;
+        localStorage.setItem(ELEVATION_ASKED_KEY, "true");
+        await installElevation();
+      } catch {
+        /* user cancelled or no privileges; settings panel still works */
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

@@ -1,3 +1,4 @@
+mod elevation;
 mod settings;
 mod timer;
 mod tray;
@@ -19,6 +20,8 @@ pub fn run() {
             timer::get_status,
             settings::get_settings,
             settings::set_settings,
+            elevation::get_elevation_status,
+            elevation::install_elevation,
         ])
         .setup(|app| {
             tray::build(app.handle())?;
