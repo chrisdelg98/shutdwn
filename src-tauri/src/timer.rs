@@ -6,6 +6,7 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::tray::TrayIcon;
 use tauri::{AppHandle, Emitter, Manager, State};
+use tauri_plugin_notification::NotificationExt;
 
 #[derive(Default)]
 pub struct AppState {
@@ -134,6 +135,13 @@ pub fn start_timer(state: State<AppState>, app: AppHandle, minutes: u32) -> Time
         let mut last_tooltip = Instant::now();
         let tooltip_interval = Duration::from_secs(30);
 
+        let warn_at = if duration_ms > 60_000 {
+            Some(deadline - Duration::from_secs(60))
+        } else {
+            None
+        };
+        let mut warned = false;
+
         loop {
             let now = Instant::now();
             if now >= deadline {
@@ -141,6 +149,12 @@ pub fn start_timer(state: State<AppState>, app: AppHandle, minutes: u32) -> Time
             }
             if cancel_thread.load(Ordering::Relaxed) {
                 return;
+            }
+            if let Some(w) = warn_at {
+                if !warned && now >= w {
+                    send_warning(&app_thread);
+                    warned = true;
+                }
             }
             if now.duration_since(last_tooltip) >= tooltip_interval {
                 let status =
@@ -186,6 +200,15 @@ pub fn cancel_timer(_state: State<AppState>, app: AppHandle) -> TimerStatus {
 #[tauri::command]
 pub fn get_status(state: State<AppState>) -> TimerStatus {
     snapshot(&state)
+}
+
+fn send_warning(app: &AppHandle) {
+    let _ = app
+        .notification()
+        .builder()
+        .title("shutdwn")
+        .body("Shutting down in 1 minute. Open shutdwn to cancel.")
+        .show();
 }
 
 fn execute_shutdown() -> std::io::Result<ExitStatus> {
