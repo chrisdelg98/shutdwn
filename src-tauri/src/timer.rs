@@ -4,11 +4,13 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use tauri::tray::TrayIcon;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 #[derive(Default)]
 pub struct AppState {
     pub timer: Mutex<Option<TimerSlot>>,
+    pub tray: Mutex<Option<TrayIcon>>,
 }
 
 pub struct TimerSlot {
@@ -62,6 +64,50 @@ fn snapshot(state: &State<AppState>) -> TimerStatus {
     }
 }
 
+pub fn tooltip_for(status: &TimerStatus) -> String {
+    match status.remaining_ms {
+        Some(ms) if status.active => format!("shutdwn — {} left", format_remaining(ms)),
+        _ => "shutdwn — Idle".to_string(),
+    }
+}
+
+fn format_remaining(ms: i64) -> String {
+    let total = (ms.max(0) / 1000) as u64;
+    let h = total / 3600;
+    let m = (total % 3600) / 60;
+    let s = total % 60;
+    if h > 0 {
+        format!("{}h {:02}m", h, m)
+    } else if m > 0 {
+        format!("{}m {:02}s", m, s)
+    } else {
+        format!("{}s", s)
+    }
+}
+
+fn update_tray_tooltip(app: &AppHandle, status: &TimerStatus) {
+    let text = tooltip_for(status);
+    let state = app.state::<AppState>();
+    let guard = state.tray.lock().unwrap();
+    if let Some(tray) = guard.as_ref() {
+        let _ = tray.set_tooltip(Some(&text));
+    }
+}
+
+pub fn cancel_timer_internal(app: &AppHandle) -> TimerStatus {
+    let state = app.state::<AppState>();
+    let mut guard = state.timer.lock().unwrap();
+    if let Some(slot) = guard.take() {
+        slot.cancel.store(true, Ordering::Relaxed);
+    }
+    drop(guard);
+
+    let status = TimerStatus::idle();
+    let _ = app.emit("timer-changed", status.clone());
+    update_tray_tooltip(app, &status);
+    status
+}
+
 #[tauri::command]
 pub fn start_timer(state: State<AppState>, app: AppHandle, minutes: u32) -> TimerStatus {
     if minutes == 0 {
@@ -85,6 +131,9 @@ pub fn start_timer(state: State<AppState>, app: AppHandle, minutes: u32) -> Time
     thread::spawn(move || {
         let deadline = Instant::now() + Duration::from_millis(duration_ms);
         let poll = Duration::from_millis(250);
+        let mut last_tooltip = Instant::now();
+        let tooltip_interval = Duration::from_secs(30);
+
         loop {
             let now = Instant::now();
             if now >= deadline {
@@ -92,6 +141,12 @@ pub fn start_timer(state: State<AppState>, app: AppHandle, minutes: u32) -> Time
             }
             if cancel_thread.load(Ordering::Relaxed) {
                 return;
+            }
+            if now.duration_since(last_tooltip) >= tooltip_interval {
+                let status =
+                    TimerStatus::running(target_unix_ms, duration_ms);
+                update_tray_tooltip(&app_thread, &status);
+                last_tooltip = now;
             }
             let sleep_for = std::cmp::min(deadline - now, poll);
             thread::sleep(sleep_for);
@@ -104,7 +159,9 @@ pub fn start_timer(state: State<AppState>, app: AppHandle, minutes: u32) -> Time
             let state = app_thread.state::<AppState>();
             *state.timer.lock().unwrap() = None;
         }
-        let _ = app_thread.emit("timer-changed", TimerStatus::idle());
+        let idle = TimerStatus::idle();
+        update_tray_tooltip(&app_thread, &idle);
+        let _ = app_thread.emit("timer-changed", idle);
         let _ = app_thread.emit("timer-fired", ());
         let _ = execute_shutdown();
     });
@@ -117,20 +174,13 @@ pub fn start_timer(state: State<AppState>, app: AppHandle, minutes: u32) -> Time
 
     let status = TimerStatus::running(target_unix_ms, duration_ms);
     let _ = app.emit("timer-changed", status.clone());
+    update_tray_tooltip(&app, &status);
     status
 }
 
 #[tauri::command]
-pub fn cancel_timer(state: State<AppState>, app: AppHandle) -> TimerStatus {
-    let mut guard = state.timer.lock().unwrap();
-    if let Some(slot) = guard.take() {
-        slot.cancel.store(true, Ordering::Relaxed);
-    }
-    drop(guard);
-
-    let status = TimerStatus::idle();
-    let _ = app.emit("timer-changed", status.clone());
-    status
+pub fn cancel_timer(_state: State<AppState>, app: AppHandle) -> TimerStatus {
+    cancel_timer_internal(&app)
 }
 
 #[tauri::command]

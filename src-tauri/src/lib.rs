@@ -1,5 +1,7 @@
 mod timer;
+mod tray;
 
+use tauri::WindowEvent;
 use timer::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -13,6 +15,16 @@ pub fn run() {
             timer::cancel_timer,
             timer::get_status,
         ])
+        .setup(|app| {
+            tray::build(app.handle())?;
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                let _ = window.hide();
+                api.prevent_close();
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
