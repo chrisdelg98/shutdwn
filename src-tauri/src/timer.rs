@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 #[derive(Default)]
 pub struct AppState {
@@ -13,6 +13,7 @@ pub struct AppState {
 
 pub struct TimerSlot {
     pub target_unix_ms: u64,
+    pub duration_ms: u64,
     pub cancel: Arc<AtomicBool>,
 }
 
@@ -21,19 +22,26 @@ pub struct TimerSlot {
 pub struct TimerStatus {
     pub active: bool,
     pub target_unix_ms: Option<u64>,
+    pub duration_ms: Option<u64>,
     pub remaining_ms: Option<i64>,
 }
 
 impl TimerStatus {
     fn idle() -> Self {
-        Self { active: false, target_unix_ms: None, remaining_ms: None }
+        Self {
+            active: false,
+            target_unix_ms: None,
+            duration_ms: None,
+            remaining_ms: None,
+        }
     }
 
-    fn running(target_unix_ms: u64) -> Self {
+    fn running(target_unix_ms: u64, duration_ms: u64) -> Self {
         let remaining = target_unix_ms as i64 - now_unix_ms() as i64;
         Self {
             active: true,
             target_unix_ms: Some(target_unix_ms),
+            duration_ms: Some(duration_ms),
             remaining_ms: Some(remaining.max(0)),
         }
     }
@@ -50,7 +58,7 @@ fn snapshot(state: &State<AppState>) -> TimerStatus {
     let guard = state.timer.lock().unwrap();
     match guard.as_ref() {
         None => TimerStatus::idle(),
-        Some(slot) => TimerStatus::running(slot.target_unix_ms),
+        Some(slot) => TimerStatus::running(slot.target_unix_ms, slot.duration_ms),
     }
 }
 
@@ -91,13 +99,23 @@ pub fn start_timer(state: State<AppState>, app: AppHandle, minutes: u32) -> Time
         if cancel_thread.load(Ordering::Relaxed) {
             return;
         }
+
+        {
+            let state = app_thread.state::<AppState>();
+            *state.timer.lock().unwrap() = None;
+        }
+        let _ = app_thread.emit("timer-changed", TimerStatus::idle());
         let _ = app_thread.emit("timer-fired", ());
         let _ = execute_shutdown();
     });
 
-    *state.timer.lock().unwrap() = Some(TimerSlot { target_unix_ms, cancel });
+    *state.timer.lock().unwrap() = Some(TimerSlot {
+        target_unix_ms,
+        duration_ms,
+        cancel,
+    });
 
-    let status = TimerStatus::running(target_unix_ms);
+    let status = TimerStatus::running(target_unix_ms, duration_ms);
     let _ = app.emit("timer-changed", status.clone());
     status
 }
